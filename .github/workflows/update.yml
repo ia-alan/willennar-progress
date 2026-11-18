@@ -1,0 +1,48 @@
+name: Update catalog progress
+
+on:
+  schedule:
+    # Weekdays at 11:00 UTC (7am EDT / 6am EST). https://crontab.guru
+    - cron: "0 11 * * 1-5"
+  # The harvester pushes new catalog totals -- refresh the page right away.
+  push:
+    branches: [main]
+    paths: [willennar_catalog_counts.json]
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+# One run at a time: a scheduled run and a harvester-triggered run both push to main.
+concurrency:
+  group: update-site-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Run update script
+        run: python3 update_site.py
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          # Only the page is written by the script. willennar_catalog_counts.json
+          # is input pushed by the harvester and is never written here.
+          git add index.html
+          if git diff --cached --quiet; then
+            echo "No changes to publish."
+          else
+            git commit -m "Automated catalog progress update"
+            # The harvester may have pushed new totals while this ran.
+            git pull --rebase origin main
+            git push
+          fi

@@ -1,0 +1,393 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Willennar Catalog Progress</title>
+<style>
+  :root {
+    color-scheme: light;
+    --surface-1:      #000000;
+    --page-plane:     #000000;
+    --text-primary:   #e8e6e1;
+    --text-secondary: #e8e6e1;
+    --text-muted:     #e8e6e1;
+    --gridline:       rgba(232,230,225,0.3);
+    --baseline:       rgba(232,230,225,0.5);
+    --border:         rgba(232,230,225,0.4);
+    --series-1:       #e8e6e1;
+    --series-1-wash:  rgba(232,230,225,0.14);
+    --card-shadow:    none;
+  }
+  /* Fixed brand palette — deliberately identical regardless of the viewer's
+     light/dark setting; this page does not adapt. */
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) {
+      color-scheme: light;
+      --surface-1:      #000000;
+      --page-plane:     #000000;
+      --text-primary:   #e8e6e1;
+      --text-secondary: #e8e6e1;
+      --text-muted:     #e8e6e1;
+      --gridline:       rgba(232,230,225,0.3);
+      --baseline:       rgba(232,230,225,0.5);
+      --border:         rgba(232,230,225,0.4);
+      --series-1:       #e8e6e1;
+      --series-1-wash:  rgba(232,230,225,0.14);
+      --card-shadow:    none;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: light;
+    --surface-1:      #000000;
+    --page-plane:     #000000;
+    --text-primary:   #e8e6e1;
+    --text-secondary: #e8e6e1;
+    --text-muted:     #e8e6e1;
+    --gridline:       rgba(232,230,225,0.3);
+    --baseline:       rgba(232,230,225,0.5);
+    --border:         rgba(232,230,225,0.4);
+    --series-1:       #e8e6e1;
+    --series-1-wash:  rgba(232,230,225,0.14);
+    --card-shadow:    none;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--page-plane);
+    color: var(--text-primary);
+    font-family: "OCR-A Extended", "OCR A Extended", "OCR-A", "OCR A Std", monospace;
+    padding: 32px 24px 64px;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+  header { margin-bottom: 28px; }
+  h1 { font-size: 22px; font-weight: 700; margin: 0 0 4px; text-wrap: balance; }
+  .subtitle { color: var(--text-secondary); font-size: 14px; margin: 0; }
+
+  .kpi-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .kpi-tile {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 18px;
+    box-shadow: var(--card-shadow);
+  }
+  .kpi-label { font-size: 12px; color: var(--text-secondary); margin: 0 0 6px; }
+  .kpi-value { font-size: 26px; font-weight: 600; margin: 0; letter-spacing: -0.01em; }
+
+  .card {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 20px 16px;
+    box-shadow: var(--card-shadow);
+    margin-bottom: 20px;
+  }
+  .card h2 { font-size: 15px; font-weight: 600; margin: 0 0 2px; }
+  .card .card-sub { font-size: 12.5px; color: var(--text-muted); margin: 0 0 14px; }
+
+  .chart-scroll { overflow-x: auto; }
+  .chart-scroll::-webkit-scrollbar { height: 6px; }
+  .chart-scroll::-webkit-scrollbar-track { background: transparent; }
+  .chart-scroll::-webkit-scrollbar-thumb { background: rgba(232,230,225,0.4); border-radius: 3px; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th {
+    text-align: left;
+    font-size: 11.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    color: var(--text-muted);
+    font-weight: 600;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--gridline);
+    white-space: nowrap;
+  }
+  thead th.num, td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  tbody td { padding: 9px 10px; border-bottom: 1px solid var(--gridline); color: var(--text-primary); }
+  tbody tr:hover { background: var(--series-1-wash); }
+  td.code { font-weight: 600; }
+  td.code .code-sub { display: block; font-weight: 400; font-size: 11px; color: var(--text-muted); opacity: 0.7; margin-top: 3px; letter-spacing: 0.04em; }
+  td.code a { color: inherit; text-decoration: none; border-bottom: 1px dotted var(--border); }
+  td.code a:hover { border-bottom-style: solid; }
+  .estimate-flag { font-weight: 400; opacity: 0.65; cursor: help; }
+
+  .badge-finalizing {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 1px 7px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    vertical-align: middle;
+  }
+
+  .progress-cell { display: flex; align-items: center; gap: 10px; min-width: 180px; }
+  .progress-track {
+    flex: 1;
+    height: 14px;
+    background: var(--series-1-wash);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .progress-fill { height: 14px; background: var(--series-1); }
+  .progress-pct {
+    font-variant-numeric: tabular-nums;
+    font-size: 12.5px;
+    width: 40px;
+    flex-shrink: 0;
+    text-align: right;
+  }
+
+  .about {
+    font-size: 12.5px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+  }
+  .about p + p { margin-top: 10px; }
+
+  footer {
+    font-size: 11.5px;
+    color: var(--text-muted);
+    text-align: center;
+    margin-top: 8px;
+  }
+
+  @media (max-width: 640px) {
+    .kpi-row { grid-template-columns: repeat(2, 1fr); }
+    .progress-cell { min-width: 120px; }
+  }
+
+  .week-chart { display: flex; align-items: flex-end; gap: 6px; height: 150px; padding-top: 18px; }
+  .week-col { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; min-width: 28px; }
+  .week-val { font-size: 11px; font-variant-numeric: tabular-nums; margin-bottom: 4px; }
+  .week-bar { width: 100%; display: flex; flex-direction: column-reverse; border-radius: 3px 3px 0 0; overflow: hidden; }
+  .week-live { background: var(--series-1); }
+  .week-test { background: var(--series-1-wash); border: 1px solid var(--border); border-bottom: 0; }
+  .week-labels { display: flex; gap: 6px; margin-top: 6px; border-top: 1px solid var(--baseline); padding-top: 6px; }
+  .week-labels span { flex: 1; min-width: 28px; text-align: center; font-size: 10.5px; white-space: nowrap; }
+  .legend { display: flex; gap: 16px; font-size: 12px; margin: 0 0 6px; }
+  .legend i { display: inline-block; width: 12px; height: 12px; border-radius: 2px; vertical-align: -2px; margin-right: 6px; }
+  .legend .sw-live { background: var(--series-1); }
+  .legend .sw-test { background: var(--series-1-wash); border: 1px solid var(--border); }
+  .tag { display: inline-block; padding: 1px 7px; border: 1px solid var(--border); border-radius: 999px; font-size: 10px; letter-spacing: 0.04em; text-transform: uppercase; }
+  .tag.live { background: var(--series-1); color: var(--page-plane); border-color: var(--series-1); }
+  td.title a { color: inherit; text-decoration: none; border-bottom: 1px dotted var(--border); }
+  details summary { cursor: pointer; font-size: 13px; }
+  details ul { columns: 2; font-size: 12.5px; margin: 10px 0 0; padding-left: 18px; }
+  details li { break-inside: avoid; margin-bottom: 4px; }
+  .note { font-size: 12px; border: 1px dashed var(--border); border-radius: 8px; padding: 8px 12px; margin: 0 0 16px; }
+  @media (max-width: 640px) { details ul { columns: 1; } .week-labels span:nth-child(odd) { visibility: hidden; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>Willennar Genealogy Center</h1>
+  <p class="subtitle">Eckhart Public Library's catalog on the Internet Archive — updated <span id="snapshot-date"></span></p>
+</header>
+
+<div id="note-slot"></div>
+<section class="kpi-row" id="kpi-row"></section>
+
+<div class="card">
+  <h2>Collections in progress</h2>
+  <p class="card-sub">One row per catalog collection that has started uploading. "Uploaded" counts records in the eckhartpubliclibrary collection; click a name to see them. The most recently active collections come first.</p>
+  <div class="chart-scroll">
+    <table>
+      <thead><tr><th>Collection</th><th class="num">Uploaded / Total</th><th>Progress</th><th class="num">Test</th></tr></thead>
+      <tbody id="progress-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Uploads per week</h2>
+  <p class="card-sub">Records uploaded each week (weeks start Monday), last 12 weeks.</p>
+  <p class="legend"><span><i class="sw-live"></i>archive.org (live)</span><span><i class="sw-test"></i>test uploads</span></p>
+  <div class="chart-scroll"><div style="min-width: 420px">
+    <div class="week-chart" id="week-chart"></div>
+    <div class="week-labels" id="week-labels"></div>
+  </div></div>
+</div>
+
+<div class="card">
+  <h2>Latest uploads</h2>
+  <p class="card-sub">The most recent records to reach archive.org.</p>
+  <div class="chart-scroll">
+    <table>
+      <thead><tr><th>Title</th><th>Collection</th><th>Where</th><th class="num">Added</th></tr></thead>
+      <tbody id="recent-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Complete collections</h2>
+  <p class="card-sub">Every record in the catalog collection is on archive.org.</p>
+  <div class="chart-scroll">
+    <table>
+      <thead><tr><th>Collection</th><th class="num">Uploaded / Total</th><th>Progress</th><th class="num">Test</th></tr></thead>
+      <tbody id="complete-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card" id="not-started-card">
+  <h2>Not started yet</h2>
+  <details><summary id="not-started-summary"></summary><ul id="not-started-list"></ul></details>
+</div>
+
+<div class="card about">
+  <h2>About this dashboard</h2>
+  <p>Each record in the Willennar Genealogy Center's online catalog (willennar.catalogaccess.com) is copied to the Internet Archive as its own item. "Total" is the number of records in that catalog collection, counted at the last harvest. "Uploaded" is how many of them are now in the eckhartpubliclibrary collection. Each record is counted once, even if it was uploaded more than once.</p>
+  <p>"Test" counts trial uploads to archive.org's shared test collection. archive.org removes test items after about 30 days, so this number goes down on its own.</p>
+  <p>A total marked <span class="estimate-flag">*</span> isn't known yet: the catalog count for that collection hasn't been provided.</p>
+  <p>This is a snapshot from the most recent update, not a live feed.</p>
+</div>
+
+<footer>Eckhart Public Library × Internet Archive</footer>
+
+<script>
+const DATA = {"catalog_total":null,"catalog_counted":null,"catalog_stale":false,"collection_count":12,"live_records":0,"test_records":20,"in_progress":[{"name":"John Martin Smith Miscellaneous Collection","total":null,"total_by_type":{},"live":0,"live_by_type":{},"test":3,"last_upload":"2026-11-18","state":"in_progress"},{"name":"John Martin Smith DeKalb County Fair Collection","total":null,"total_by_type":{},"live":0,"live_by_type":{},"test":2,"last_upload":"2026-11-18","state":"in_progress"},{"name":"Eckhart Public Library Photo Collection","total":null,"total_by_type":{},"live":0,"live_by_type":{},"test":2,"last_upload":"2026-11-18","state":"in_progress"},{"name":"Jack Randinelli ACD Collection","total":null,"total_by_type":{},"live":0,"live_by_type":{},"test":1,"last_upload":"2026-11-18","state":"in_progress"},{"name":"Charles Eckhart & W. H. McIntosh Collection","total":null,"total_by_type":{},"live":0,"live_by_type":{},"test":1,"last_upload":"2026-11-18","state":"in_progress"},{"name":"Fitzbob Photo Collection","total":null,"total_by_type":{},"live":0,"live_by_type":{},"test":1,"last_upload":"2026-11-18","state":"in_progress"},{"name":"JMS DeKalb Co. 1837-1987 Collection","total":null,"total_by_type":{},"live":0,"live_by_type":{},"test":1,"last_upload":"2026-11-18","state":"in_progress"},{"name":"DeKalb Co. Photographic Business Directory","total":null,"total_by_type":{},"live":0,"live_by_type":{},"test":1,"last_upload":"2026-11-18","state":"in_progress"},{"name":"John Martin Smith Postcard Collection","total":null,"total_by_type":{},"live":0,"live_by_type":{},"test":1,"last_upload":"2026-11-18","state":"in_progress"},{"name":"Extraordinary Hoosiers: Don Lash Collection","total":null,"total_by_type":{},"live":0,"live_by_type":{},"test":2,"last_upload":"2026-11-18","state":"in_progress"},{"name":"(no catalog collection)","total":null,"total_by_type":{},"live":0,"live_by_type":{},"test":1,"last_upload":"2026-11-18","state":"in_progress"},{"name":"Transportation in Indiana","total":null,"total_by_type":{},"live":0,"live_by_type":{},"test":3,"last_upload":"2026-11-18","state":"in_progress"},{"name":"Nichols-Wasson Collection","total":null,"total_by_type":{},"live":0,"live_by_type":{},"test":1,"last_upload":"2026-11-18","state":"in_progress"}],"complete":[],"not_started":[],"weekly":[{"week":"2026-08-31","live":0,"test":0},{"week":"2026-09-07","live":0,"test":0},{"week":"2026-09-14","live":0,"test":0},{"week":"2026-09-21","live":0,"test":0},{"week":"2026-09-28","live":0,"test":0},{"week":"2026-10-05","live":0,"test":0},{"week":"2026-10-12","live":0,"test":0},{"week":"2026-10-19","live":0,"test":0},{"week":"2026-10-26","live":0,"test":0},{"week":"2026-11-02","live":0,"test":0},{"week":"2026-11-09","live":0,"test":0},{"week":"2026-11-16","live":0,"test":20}],"recent":[{"identifier":"test-willennar-library-2013.07.14.A44.041","title":"2007 Dekalb County 4-H Handbook","collection":"John Martin Smith DeKalb County Fair Collection","where":"test","added":"2026-11-18"},{"identifier":"test-willennar-library-2013.07.14.B6.105","title":"Envelope Addressed to Forrest A. Zonker from Washclean Distributing Co.","collection":"John Martin Smith Miscellaneous Collection","where":"test","added":"2026-11-18"},{"identifier":"test-willennar-library-2013.07.14.D1-31.377","title":"Envelope Addressed to Mr. and Mrs. John May and Family, Corunna, Indiana.","collection":"(no catalog collection)","where":"test","added":"2026-11-18"},{"identifier":"test-willennar-library-2013.07.14.W2.018","title":"1931 Envelope from National Detective Association, Ladoga, Indiana","collection":"John Martin Smith Miscellaneous Collection","where":"test","added":"2026-11-18"},{"identifier":"test-willennar-library-2017.10.06.077","title":"Eckhart Public Library Estimate","collection":"Charles Eckhart & W. H. McIntosh Collection","where":"test","added":"2026-11-18"},{"identifier":"test-willennar-objects-pp178","title":"Pin","collection":"Extraordinary Hoosiers: Don Lash Collection","where":"test","added":"2026-11-18"},{"identifier":"test-willennar-objects-pp237","title":"Button","collection":"Extraordinary Hoosiers: Don Lash Collection","where":"test","added":"2026-11-18"},{"identifier":"test-willennar-objects-pp286","title":"Nameplate","collection":"Jack Randinelli ACD Collection","where":"test","added":"2026-11-18"},{"identifier":"test-willennar-photos-2003.001.049","title":"Shine Shoe Store Fire","collection":"Eckhart Public Library Photo Collection","where":"test","added":"2026-11-18"},{"identifier":"test-willennar-photos-2003.01.01.001","title":"Leas Super Market","collection":"Eckhart Public Library Photo Collection","where":"test","added":"2026-11-18"}],"live_collection":"eckhartpubliclibrary","test_collection":"test_collection"};
+const SNAPSHOT_DATE = "November 18, 2026";
+
+const fmt = n => n.toLocaleString('en-US');
+const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const shortDate = iso => { if (!iso) return ''; const [y, m, d] = iso.split('-').map(Number); return MONTHS[m - 1] + ' ' + d; };
+const NO_COLLECTION = '(no catalog collection)';
+
+document.getElementById('snapshot-date').textContent = SNAPSHOT_DATE;
+
+const noteSlot = document.getElementById('note-slot');
+if (DATA.catalog_total == null) {
+  noteSlot.appendChild(el('p', 'note', 'Catalog totals have not been provided yet, so progress percentages are not shown. Upload counts are current.'));
+} else if (DATA.catalog_stale) {
+  noteSlot.appendChild(el('p', 'note', 'Catalog totals were last counted ' + DATA.catalog_counted + ' and may be out of date.'));
+}
+
+const overallPct = DATA.catalog_total ? Math.min(100, Math.round(100 * DATA.live_records / DATA.catalog_total)) : null;
+[
+  { label: 'Records in catalog', value: DATA.catalog_total == null ? '—' : fmt(DATA.catalog_total) },
+  { label: 'On archive.org', value: fmt(DATA.live_records) },
+  { label: 'Test uploads', value: fmt(DATA.test_records) },
+  { label: 'Overall progress', value: overallPct == null ? '—' : overallPct + '%' },
+].forEach(k => {
+  const tile = el('div', 'kpi-tile');
+  tile.appendChild(el('p', 'kpi-label', k.label));
+  tile.appendChild(el('p', 'kpi-value', k.value));
+  document.getElementById('kpi-row').appendChild(tile);
+});
+
+function typeSummary(r) {
+  const types = Object.keys(Object.assign({}, r.total_by_type, r.live_by_type)).sort();
+  return types.map(t => {
+    const live = (r.live_by_type || {})[t] || 0;
+    const tot = (r.total_by_type || {})[t];
+    return t + ' ' + fmt(live) + (tot != null ? '/' + fmt(tot) : '');
+  }).join(' · ');
+}
+
+function renderRow(tbody, r) {
+  const tr = el('tr');
+  const name = el('td', 'code');
+  if (r.name === NO_COLLECTION) {
+    name.appendChild(document.createTextNode(r.name));
+  } else {
+    const a = el('a', null, r.name);
+    a.href = 'https://archive.org/search?query=' + encodeURIComponent('collection:' + DATA.live_collection + ' AND pp_collection:"' + r.name + '"');
+    a.target = '_blank'; a.rel = 'noopener noreferrer';
+    name.appendChild(a);
+  }
+  const subParts = [];
+  const ts = typeSummary(r);
+  if (ts) subParts.push(ts);
+  if (r.last_upload) subParts.push('last upload ' + r.last_upload);
+  if (subParts.length) name.appendChild(el('span', 'code-sub', subParts.join(' — ')));
+
+  const count = el('td', 'num', fmt(r.live) + ' / ' + (r.total == null ? '?' : fmt(r.total)));
+  if (r.total == null) {
+    const est = el('span', 'estimate-flag', ' *');
+    est.title = "This collection's catalog count hasn't been provided yet.";
+    count.appendChild(est);
+  }
+
+  const pct = r.total ? Math.min(100, Math.round(100 * r.live / r.total)) : null;
+  const prog = el('td');
+  const cell = el('div', 'progress-cell');
+  const track = el('div', 'progress-track');
+  const fill = el('div', 'progress-fill');
+  fill.style.width = (pct || 0) + '%';
+  track.appendChild(fill);
+  cell.appendChild(track);
+  cell.appendChild(el('span', 'progress-pct', pct == null ? '—' : pct + '%'));
+  prog.appendChild(cell);
+
+  tr.append(name, count, prog, el('td', 'num', fmt(r.test)));
+  tbody.appendChild(tr);
+}
+
+function emptyRow(tbody, cols, msg) {
+  const tr = el('tr'); const td = el('td', null, msg);
+  td.colSpan = cols; td.style.color = 'var(--text-muted)';
+  tr.appendChild(td); tbody.appendChild(tr);
+}
+
+const progressBody = document.getElementById('progress-tbody');
+DATA.in_progress.forEach(r => renderRow(progressBody, r));
+if (!DATA.in_progress.length) emptyRow(progressBody, 4, 'No collections in progress.');
+
+const completeBody = document.getElementById('complete-tbody');
+DATA.complete.forEach(r => renderRow(completeBody, r));
+if (!DATA.complete.length) emptyRow(completeBody, 4, DATA.catalog_total == null ? 'Shown once catalog totals are provided.' : 'No collections complete yet.');
+
+const ns = DATA.not_started;
+document.getElementById('not-started-summary').textContent = ns.length
+  ? ns.length + ' catalog collection' + (ns.length === 1 ? '' : 's') + ' with nothing uploaded yet'
+  : (DATA.catalog_total == null ? 'Shown once catalog totals are provided.' : 'Every catalog collection has started.');
+ns.forEach(r => document.getElementById('not-started-list').appendChild(el('li', null, r.name + ' (' + fmt(r.total) + ')')));
+
+const chart = document.getElementById('week-chart');
+const labels = document.getElementById('week-labels');
+const maxWeek = Math.max(1, ...DATA.weekly.map(w => w.live + w.test));
+DATA.weekly.forEach(w => {
+  const col = el('div', 'week-col');
+  col.title = 'Week of ' + w.week + ': ' + w.live + ' live, ' + w.test + ' test';
+  const sum = w.live + w.test;
+  col.appendChild(el('span', 'week-val', sum ? fmt(sum) : ''));
+  const bar = el('div', 'week-bar');
+  const usable = 110;
+  const live = el('div', 'week-live'); live.style.height = Math.round(usable * w.live / maxWeek) + 'px';
+  const test = el('div', 'week-test'); test.style.height = Math.round(usable * w.test / maxWeek) + 'px';
+  if (!w.test) test.style.border = '0';
+  bar.append(live, test);
+  col.appendChild(bar);
+  chart.appendChild(col);
+  labels.appendChild(el('span', null, shortDate(w.week)));
+});
+
+const recentBody = document.getElementById('recent-tbody');
+DATA.recent.forEach(r => {
+  const tr = el('tr');
+  const t = el('td', 'title');
+  const a = el('a', null, r.title);
+  a.href = 'https://archive.org/details/' + encodeURIComponent(r.identifier);
+  a.target = '_blank'; a.rel = 'noopener noreferrer';
+  t.appendChild(a);
+  const where = el('td'); where.appendChild(el('span', 'tag ' + r.where, r.where === 'live' ? 'archive.org' : 'test'));
+  tr.append(t, el('td', null, r.collection), where, el('td', 'num', shortDate(r.added)));
+  recentBody.appendChild(tr);
+});
+if (!DATA.recent.length) emptyRow(recentBody, 4, 'No uploads yet.');
+</script>
+</body>
+</html>
